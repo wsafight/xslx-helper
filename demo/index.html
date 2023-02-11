@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        var keys = function keys(val) {
+            return Object.keys(val).filter(function (item) {
+                return Object.prototype.hasOwnProperty.call(val, item);
+            });
+        };
+        var getType = function getType(val) {
+            if (typeof val === 'string') {
+                return "s" /* SheetValType['String'] */;
+            }
+
+            if (typeof val === 'number') {
+                return "n" /* SheetValType.Number */;
+            }
+
+            if (typeof val === 'boolean') {
+                return "b" /* SheetValType.Boolean */;
+            }
+
+            return '';
+        };
+        function encodeCell(cell) {
+            var col = cell.c + 1;
+            var s = "";
+            for (; col; col = (col - 1) / 26 | 0) s = String.fromCharCode((col - 1) % 26 + 65) + s;
+            return s + (cell.r + 1);
+        }
+        var json2Sheet = function json2Sheet(data, opts) {
+            if (opts === void 0) {
+                opts = {};
+            }
+            if (!Array.isArray(data) || data.length === 0) {
+                return null;
+            }
+            var _opts = opts,
+                _opts$header = _opts.header,
+                header = _opts$header === void 0 ? [] : _opts$header;
+            // const _row = []
+            var headTitle = header;
+            var sheetObj = {};
+            var rowCursor = 0;
+            var offset = +!opts.skipHeader;
+            var maxRowCount = offset + data.length;
+            data.forEach(function (item, index) {
+                var currentRowCursor = rowCursor + index + offset;
+                var currentRow = sheetObj[currentRowCursor];
+                if (!currentRow) {
+                    sheetObj[currentRowCursor] = [];
+                }
+                keys(item).forEach(function (key) {
+                    var currentIndex = headTitle.indexOf(key);
+                    if (currentIndex === -1) {
+                        currentIndex = headTitle.length;
+                        headTitle[currentIndex] = key;
+                    }
+                    var ref = encodeCell({
+                        c: currentIndex,
+                        r: currentRowCursor
+                    });
+                    var val = item[key];
+                    var type = getType(val);
+                    sheetObj[ref] = {
+                        t: type,
+                        v: val
+                    };
+                });
+            });
+            // TODO
+            //  const _maxColumnCxsount = headTitle.length;
+            sheetObj['!ref'] = "A!:B" + maxRowCount;
+            console.log('sheetObj', sheetObj);
+            //  return sheetObj
+            return {
+                '!cols': undefined,
+                '!ref': 'A!:B2',
+                A1: {
+                    t: 's',
+                    v: 'name'
+                },
+                A2: {
+                    t: 's',
+                    v: 'jump_jump'
+                },
+                B1: {
+                    t: 's',
+                    v: 'age'
+                },
+                B2: {
+                    t: 'n',
+                    v: 18
+                }
+            };
+        };
+    </script>
+</head>
+
+<body>
+    <script>
+        function exportGenerateExcel() {
+            const data = [{
+                'name': 'jump_jump',
+                'age': 18
+            }]
+            let vscols
+            // const ws = window.XLSX.utils.json_to_sheet(data);
+            const ws = json2Sheet(data);
+            console.log('ws', ws, json2Sheet)
+            ws['!cols'] = vscols || undefined;
+            const wb = window.XLSX.utils.book_new();
+            console.log('wb', wb)
+            window.XLSX.utils.book_append_sheet(wb, ws, '爱用');
+            window.XLSX.writeFile(wb, '测试.xlsx');
+        }
+    </script>
+    12312
+    <button onclick="exportGenerateExcel()">倒出数据1</button>
+    <button>倒出数据2</button>
+
+</body>
+
+</html>
